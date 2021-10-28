@@ -1161,7 +1161,8 @@ static int rtl8152_set_mac_address(struct net_device *netdev, void *p)
 	ocp_write_byte(tp, MCU_TYPE_PLA, PLA_CRWECR, CRWECR_NORAML);
 
 	mutex_unlock(&tp->control);
-
+    }
+    if (!res)
 	usb_autopm_put_interface(tp->intf);
 out1:
 	return ret;
