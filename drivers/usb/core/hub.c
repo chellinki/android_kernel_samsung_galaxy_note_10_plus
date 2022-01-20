@@ -2329,7 +2329,6 @@ static int usb_enumerate_device_otg(struct usb_device *udev)
 	return err;
 }
 
-
 /**
  * usb_enumerate_device - Read device configs/intfs/otg (usbcore-internal)
  * @udev: newly addressed device (in ADDRESS state)
@@ -4912,7 +4911,7 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
 	struct usb_port *port_dev = hub->ports[port1 - 1];
 	struct usb_device *udev = port_dev->child;
 	static int unreliable_port = -1;
-    bool retry_locked;
+	bool retry_locked;
 #ifdef CONFIG_USB_DEBUG_DETAILED_LOG
 	dev_info(&port_dev->dev,
 		"port %d, status %04x, change %04x, %s\n",
@@ -4987,6 +4986,10 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
 			"%s : before usb_alloc_dev() port %d, status %04x, change %04x, %s\n",
 			__func__, port1, portstatus, portchange, portspeed(hub, portstatus));
 #endif
+		usb_lock_port(port_dev);
+		mutex_lock(hcd->address0_mutex);
+		retry_locked = true;
+
 		/* reallocate for each attempt, since references
 		 * to the previous one can escape in various ways
 		 */
@@ -5695,9 +5698,6 @@ static int usb_reset_and_verify_device(struct usb_device *udev)
 	mutex_lock(hcd->address0_mutex);
 
 	for (i = 0; i < SET_CONFIG_TRIES; ++i) {
-        usb_lock_port(port_dev);
-        mutex_lock(hcd->address0_mutex);
-        retry_locked = true;
 
 		/* ep0 maxpacket size may change; let the HCD know about it.
 		 * Other endpoints will be handled by re-enumeration. */

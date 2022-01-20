@@ -727,11 +727,12 @@ static int kauditd_send_queue(struct sock *sk, u32 portid,
 			continue;
 		}
 
+retry:
 		/* grab an extra skb reference in case of error */
 		skb_get(skb);
 		rc = netlink_unicast(sk, skb, portid, 0);
 		if (rc < 0) {
-            /* send failed - try a few times unless fatal error */
+			/* send failed - try a few times unless fatal error */
 			if (++failed >= retry_limit ||
 			    rc == -ECONNREFUSED || rc == -EPERM) {
 				sk = NULL;
@@ -740,9 +741,9 @@ static int kauditd_send_queue(struct sock *sk, u32 portid,
 				if (rc == -EAGAIN)
 					rc = 0;
 				/* continue to drain the queue */
-                continue;
+				continue;
 			} else
-                goto retry;
+				goto retry;
 		} else {
 // [ SEC_SELINUX_PORTING_COMMON
 #ifdef CONFIG_PROC_AVC
@@ -754,12 +755,11 @@ static int kauditd_send_queue(struct sock *sk, u32 portid,
 #endif
 // ] SEC_SELINUX_PORTING_COMMON
 			/* skb sent - drop the extra reference and continue */
-            consume_skb(skb);
+			consume_skb(skb);
 			failed = 0;
 		}
 	}
 
-out:
 	return (rc >= 0 ? 0 : rc);
 }
 
