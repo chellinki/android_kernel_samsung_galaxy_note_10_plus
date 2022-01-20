@@ -1125,7 +1125,9 @@ static int dw_mci_exynos_execute_tuning(struct dw_mci_slot *slot, u32 opcode,
 		mci_writel(host, CDTHRCTL, 0 << 16 | 0);
 		dw_mci_exynos_set_sample(host, orig_sample, false);
 		ret = -EIO;
-	}
+        dev_warn(&mmc->class_dev,
+                       "There is no candiates value about clksmpl!\n");
+    }
 
 	/* Rollback Clock drive strength */
 	if (priv->pinctrl && priv->clk_drive_base)
@@ -1324,6 +1326,18 @@ static ssize_t sd_count_show(struct device *dev,
 	}
 	len = snprintf(buf, PAGE_SIZE, "%lld\n", total_cnt);
 
+	/*
+	 * If there is no cadiates value, then it needs to return -EIO.
+	 * If there are candiates values and don't find bset clk sample value,
+	 * then use a first candiates clock sample value.
+	 */
+	for (i = 0; i < iter; i++) {
+		__c = ror8(candiates, i);
+		if ((__c & 0x1) == 0x1) {
+			loc = i;
+			goto out;
+		}
+	}
 out:
 	return len;
 }
